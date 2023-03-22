@@ -51,7 +51,7 @@
       command: sudo npm install -g @angular/cli
     - name: Install reqired packages
       command: cd "{{ dest_path }}"
-    - name: npm install pm2@latest -g
+    #- name: npm install pm2@latest -g
      # npm: name=pm2 global=yes state=present
 	  - name: Install npm installation
       command: npm install
