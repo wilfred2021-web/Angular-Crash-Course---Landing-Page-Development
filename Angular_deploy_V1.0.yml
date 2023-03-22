@@ -47,8 +47,8 @@
       yum:
         name: nodejs
         state: present
-    - name: Install reqired packages
-      command: sudo npm install -g @angular/cli
+   # - name: Install reqired packages
+  #    command: sudo npm install -g @angular/cli
     - name: Install npm installation
       command: npm install
     - name: Build an application and serve it locally
