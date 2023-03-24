@@ -51,6 +51,10 @@
       command: sudo npm install -g @angular/cli
     - name: Install npm installation
       command: npm install
+    - name: Build an application and serve it locally
+      command: ng serve
+	- name: Install application/libraries
+      command: ng build
     - name: Install reqired packages
       command: cd "{{ dest_path }}"
     - name: Install PM2
