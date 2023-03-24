@@ -51,10 +51,6 @@
       command: sudo npm install -g @angular/cli
     - name: Install npm installation
       command: npm install
-    #- name: Build an application and serve it locally
-     # command: ng serve
-	 # - name: Install application/libraries
-     # command: ng build
     - name: Install reqired packages
       command: cd "{{ dest_path }}"
     - name: Install PM2
@@ -63,8 +59,8 @@
       command: pm2 status
       register: pm2_status
       changed_when: false
-    #- name: Kill pm2 service
-    #  command: pm2 kill
+    - name: Kill pm2 service
+      command: pm2 kill
     - name: Start service
       command: pm2 start -- start ./src/index.html --name "{{DOCKER_TAG}}-Service"
       args:
