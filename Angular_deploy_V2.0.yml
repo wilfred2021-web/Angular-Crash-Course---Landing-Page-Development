@@ -1,0 +1,68 @@
+---
+- name: Staging server Deployment
+  hosts: stageserver
+  become_user: root
+  become: true
+  vars:
+    repo_path: nrbaskar/angularcourse:{{DOCKER_TAG}}
+    dest_path: /home/ec2-user/{{DOCKER_TAG}}
+  tasks:
+    - name: Install python pip
+      yum:
+        name: python-pip
+        state: present
+    - name: Install docker
+      yum:
+        name: docker
+        state: present
+    - name: start docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+    - name: Install docker-py python module
+      pip:
+        name: docker-py
+        state: present
+    - name: Pull docker image
+      docker_image:
+        name: nrbaskar/angularcourse
+        tag: "{{DOCKER_TAG}}"
+        source: pull
+    - name: create directory
+      file:
+        state: directory
+        dest: "{{dest_path}}"
+    - name: copy website to the host
+      copy:
+        src: ./
+        dest: "{{dest_path}}"
+    - name: Install Node.js
+      yum:
+        name: nodejs
+        state: present
+    - name: Install Angular CLI
+      npm:
+        name: '@angular/cli'
+        state: present
+        global: yes
+    - name: Install project dependencies
+      command: npm install
+      args:
+        chdir: "{{ dest_path }}"
+    - name: Build Angular application
+      command: ng build --prod
+      args:
+        chdir: "{{ dest_path }}"
+    - name: Install PM2
+      npm:
+        name: pm2
+        state: present
+        global: yes
+    - name: Stop existing PM2 service
+      command: pm2 delete all
+      ignore_errors: yes
+    - name: Start PM2 service
+      command: pm2 start server.js --name "{{DOCKER_TAG}}-Service"
+      args:
+        chdir: "{{ dest_path }}/dist"
