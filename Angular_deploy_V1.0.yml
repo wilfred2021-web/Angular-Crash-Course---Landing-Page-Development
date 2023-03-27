@@ -1,5 +1,5 @@
 ---
-- name: Staging server Deployment
+- name: Staging server deployment
   hosts: stageserver
   become_user: root
   become: true
@@ -7,15 +7,13 @@
     repo_path: nrbaskar/angularcourse:{{DOCKER_TAG}}
     dest_path: /home/ec2-user/{{DOCKER_TAG}}
   tasks:
-    - name: Install python pip
+    - name: Install dependencies
       yum:
-        name: python-pip
+        name:
+          - python-pip
+          - docker
         state: present
-    - name: Install docker
-      yum:
-        name: docker
-        state: present
-    - name: start docker
+    - name: Start Docker service
       service:
         name: docker
         state: started
@@ -24,51 +22,38 @@
       pip:
         name: docker-py
         state: present
-    - name: Pull docker image
+    - name: Pull Docker image
       docker_image:
         name: nrbaskar/angularcourse
         tag: "{{DOCKER_TAG}}"
         source: pull
-    - name: create directory
-      file:
-        state: directory
-        dest: "{{dest_path}}"
-    - name: copy website to the host
+    - name: Build Angular project
+      shell: ng build --prod --output-path="{{dest_path}}/dist"
+      args:
+        chdir: "{{ playbook_dir }}/path/to/angular/project"
+    - name: Copy necessary files to destination path
       copy:
-        src: ./
-        dest: "{{dest_path}}"
-    # Install NodeJS library
-    # using multiple shell commands
-    - name: Install Node.js 16.x repository
-      get_url:
-        url: https://rpm.nodesource.com/setup_16.x
-        dest: /tmp/setup_16.x.sh
-        mode: 'u+x'
-    - name: Run Node.js 16.x setup script
-      shell: /tmp/setup_16.x.sh
-    - name: Install required packages
+        src: "{{ playbook_dir }}/path/to/angular/project/dist"
+        dest: "{{ dest_path }}"
+        remote_src: yes
+    - name: Install and configure web server
       yum:
-        name: nodejs
+        name: httpd
         state: present
-    - name: Install Angular CLI
-      npm:
-        name: '@angular/cli'
-        global: yes
-        state: present
-    - name: Install npm packages
-      npm:
-        path: "{{ dest_path }}"
-        state: present
-    - name: Build and serve the Angular application
-      shell: ng serve
-      args:
-        chdir: "{{ dest_path }}"
-    - name: Install PM2
-      npm:
-        name: pm2
-        global: yes
-        state: present
-    - name: Start PM2 service
-      shell: pm2 start ./src/index.html --name "{{DOCKER_TAG}}-Service"
-      args:
-        chdir: "{{ dest_path }}"
+      notify:
+        - start web server
+    - name: Configure web server
+      template:
+        src: "{{ playbook_dir }}/path/to/httpd.conf.template"
+        dest: /etc/httpd/conf/httpd.conf
+      notify:
+        - restart web server
+    - name: Start web server
+      service:
+        name: httpd
+        state: started
+        enabled: yes
+    - name: Restart web server
+      service:
+        name: httpd
+        state: restarted
