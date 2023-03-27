@@ -26,42 +26,50 @@
         state: present
     - name: Pull docker image
       docker_image:
-        name: nrbaskar/angularcourse
-        tag: "{{DOCKER_TAG}}"
+        name: "{{ repo_path }}"
+        tag: "{{ DOCKER_TAG }}"
         source: pull
     - name: create directory
       file:
+        path: "{{ dest_path }}"
         state: directory
-        dest: "{{dest_path}}"
     - name: copy website to the host
       copy:
         src: ./
-        dest: "{{dest_path}}"
+        dest: "{{ dest_path }}"
     # Install NodeJS library
     # using multiple shell commands
-    - name: Install Nodejs & AngularJS
-      shell: 'curl --silent --location https://rpm.nodesource.com/setup_16.x | bash -'
-    # If other package are required mention the package name in "name"
-    # eg: ngix, curl, wget, apache2, nodejs
+    - name: Install Node.js 16.x repository
+      command: curl -fsSL https://rpm.nodesource.com/setup_16.x | sudo bash -
+    # Install required packages
     - name: Install required packages
       yum:
         name: nodejs
         state: present
+    # Install Angular CLI
     - name: Install Angular CLI
       command: sudo npm install -g @angular/cli
-    - name: Build the application
-      command: ng build
+    # Install project dependencies
+    - name: Install project dependencies
+      command: npm install
       args:
         chdir: "{{ dest_path }}"
+    # Build the application
+    - name: Build the application
+      command: ng build --prod
+      args:
+        chdir: "{{ dest_path }}"
+    # Install PM2
     - name: Install PM2
-      npm: name=pm2 global=yes state=present
-    - name: Get PM2's list of running processes
-      command: pm2 status
-      register: pm2_status
-      changed_when: false
-    - name: Kill PM2 service
+      npm:
+        name: pm2
+        global: yes
+    # Stop running processes
+    - name: Stop running processes
       command: pm2 kill
-    - name: Start service
-      command: pm2 start -- start ./src/index.html --name "{{DOCKER_TAG}}-Service"
+      ignore_errors: yes
+    # Start the application
+    - name: Start the application
+      command: pm2 start ./src/index.html --name "{{ DOCKER_TAG }}-Service"
       args:
         chdir: "{{ dest_path }}"
