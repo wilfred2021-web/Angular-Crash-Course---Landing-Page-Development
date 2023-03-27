@@ -43,17 +43,27 @@
       shell: 'curl --silent --location https://rpm.nodesource.com/setup_16.x | bash -'
     # If other package are required mention the package name in "name"
     # eg: ngix, curl, wget, apache2, nodejs
-    - name: Install reqired packages
+    - name: Install required packages
       yum:
         name: nodejs
         state: present
-    - name: Install reqired packages
+    - name: Install @angular/cli
       command: sudo npm install -g @angular/cli
-    - name: Install npm installation
+    - name: Install npm packages
       command: npm install
-    - name: Install application/libraries
+    - name: Change directory to Angular workspace
+      command: cd "{{dest_path}}"
+    - name: Build the application
       command: ng build
+    - name: Install PM2
+      npm: name=pm2 global=yes state=present
+    - name: Get Forever's list of running processes
+      command: pm2 status
+      register: pm2_status
+      changed_when: false
+    - name: Kill pm2 service
+      command: pm2 kill
     - name: Start service
-      command: ng serve --host 0.0.0.0 --port 4200
+      command: pm2 start -- start ./src/index.html --name "{{DOCKER_TAG}}-Service"
       args:
-        chdir: "{{ dest_path }}"
+        chdir: "{{dest_path}}"
