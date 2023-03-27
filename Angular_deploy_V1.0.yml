@@ -6,7 +6,6 @@
   vars:
     repo_path: nrbaskar/angularcourse:{{DOCKER_TAG}}
     dest_path: /home/ec2-user/{{DOCKER_TAG}}
-	dest_path_1: /angular_project
   tasks:
     - name: Install python pip
       yum:
